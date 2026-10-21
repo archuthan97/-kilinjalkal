@@ -1,6 +1,6 @@
 # கிளிஞ்சல்கள் site (kilinjalkal.netlify.app)
 
-Static site: `index.html` (HTML + CSS + vanilla JS, no build step, ~730 KB because poems/stories are embedded) plus photos in `img/` (cover, banner, beach, author; `img/banner.jpg` is also the link-preview image).
+Static site: `index.html` (HTML + CSS + vanilla JS, no build step, ~730 KB because poems/stories are embedded) plus photos in `img/` (cover, banner, beach; `img/banner.jpg` is also the link-preview image).
 Hosted on Netlify (auto-deploys from the `main` branch). Backend: Supabase (comments, ratings, view counts, `#admin` login, added pieces, custom tabs).
 
 ## Rules
