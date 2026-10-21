@@ -69,8 +69,9 @@
   .band .eyebrow { color: color-mix(in srgb, var(--band-ink) 65%, transparent); }
   .eyebrow { font: 600 0.8125rem/1.4 var(--f-ui); letter-spacing: 0.06em; color: var(--muted); margin: 0 0 0.5rem; }
   .hero h1 { font: 400 clamp(1.75rem, calc((100vw - 5rem) / 8), 5.5rem)/1.3 var(--f-display); margin: 0; text-wrap: balance; }
-  .by { font: 400 1.25rem/1.7 var(--f-body); margin: 0.5rem 0 0; }
+  .by { font: 400 clamp(1rem, 4.6vw, 1.25rem)/1.7 var(--f-body); margin: 0.5rem 0 0; }
   .by span { opacity: 0.7; }
+  .by .nm { opacity: 1; white-space: nowrap; }
   .slab { height: 18px; background: var(--accent); background-image: repeating-linear-gradient(100deg, transparent 0 11px, var(--band) 11px 13px, transparent 13px 26px); }
   .lower { padding: 1.5rem 0 0.5rem; }
   .epi { margin: 0; padding: 0 0 0 1rem; border-left: 3px solid var(--accent); font: 400 1.125rem/1.9 var(--f-body); max-width: 30rem; }
@@ -127,7 +128,7 @@
   .poem { margin-block: 1.25rem 2.5rem; }
   .stanza { font: 400 calc(1.3rem * var(--scale))/2.05 var(--f-display); margin: 0 0 1.6em; white-space: pre-line; }
   .orn { text-align: center; letter-spacing: 0.7em; color: var(--muted); margin: 2.25rem 0; font: 400 1rem/1 var(--f-ui); }
-  .pn { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+  .pn { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 2rem; }
   .pn a { text-decoration: none; max-width: 48%; min-width: 0; }
   .pn a:last-child:not(:first-child) { text-align: right; margin-left: auto; }
   .pn small { display: block; font: 400 0.8125rem/1.6 var(--f-ui); color: var(--muted); }
@@ -172,6 +173,12 @@
   .en .eh { font: 600 0.75rem/1.5 var(--f-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0; }
   .en .et { font: 400 1.125rem/1.5 var(--f-display); margin: 0.1rem 0 0.2rem; }
   .en p { margin: 0; color: var(--ink); }
+  .en summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.6rem; cursor: pointer; list-style: none; }
+  .en summary::-webkit-details-marker { display: none; }
+  .en summary::after { content: "+"; margin-left: auto; font: 600 1.125rem/1 var(--f-ui); color: var(--accent); }
+  .en[open] summary::after { content: "−"; }
+  .en[open] summary { margin-bottom: 0.4rem; }
+  .en summary .et { margin: 0; }
   .le { display: block; font: 400 0.8125rem/1.5 var(--f-ui); color: var(--muted); }
   .soc { margin: 2rem 0 1rem; border-top: 3px solid var(--ink); padding-top: 1rem; font: 400 0.9375rem/1.7 var(--f-ui); }
   .soc h2 { font: 600 1rem/1.5 var(--f-ui); margin: 0 0 0.5rem; }
@@ -179,6 +186,7 @@
   .stars { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; margin: 0.5rem 0 1rem; }
   .stars button { border: 0; background: transparent; font-size: 1.75rem; line-height: 1; padding: 0.15rem 0.25rem; color: var(--rule); }
   .stars button.on { color: var(--accent); }
+  .stars button.av { color: color-mix(in srgb, var(--accent) 55%, transparent); }
   .stars .avg { margin-left: 0.5rem; color: var(--muted); font-size: 0.875rem; }
   .cf { display: grid; gap: 0.5rem; margin: 0 0 1.25rem; }
   .cf input, .cf textarea, .adm input, .adm textarea, .adm select { font: inherit; padding: 0.55rem 0.7rem; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 0; max-width: 100%; box-sizing: border-box; width: 100%; }
@@ -200,14 +208,14 @@
 
 
   /* tab bar with icons, scrolls sideways on phones */
-  .top .nav { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; gap: 0.25rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 0.25rem; }
+  .top .nav { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; gap: 0.25rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 0.25rem; padding-right: 2.5rem; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); }
   .top .nav::-webkit-scrollbar { display: none; }
   .top .nav a { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; flex: 0 0 auto; min-width: 4.4rem; padding: 0.35rem 0.5rem; font: 600 0.8125rem/1.4 var(--f-ui); text-align: center; border-bottom: 2px solid transparent; white-space: nowrap; }
   .top .nav .ni { width: 2rem; height: 2rem; display: block; background: var(--tile); border-radius: 6px; padding: 0.2rem; }
   .top .nav .ni svg { width: 100%; height: 100%; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); gap: 0.75rem; margin-top: 1.75rem; }
-  .tl { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; text-decoration: none; padding: 0.6rem 0.4rem 0.8rem; border: 1px solid var(--rule); border-radius: 6px; text-align: center; font: 600 0.9375rem/1.4 var(--f-ui); min-width: 0; }
-  .tl .tile { width: 100%; max-width: 3.75rem; padding: 0.4rem; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); gap: 0.5rem; }
+  .tl { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-decoration: none; padding: 0.5rem 0.15rem 0.6rem; border: 1px solid var(--rule); border-radius: 6px; text-align: center; font: 600 0.75rem/1.35 var(--f-ui); min-width: 0; }
+  .tl .tile { width: 100%; max-width: 2.75rem; padding: 0.3rem; }
   .tl:hover { border-color: var(--accent); }
   .vis { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1rem; margin-top: 1.5rem; padding: 1rem 1.25rem; border: 2px solid var(--ink); }
   .vis .vn { font: 400 clamp(2.75rem, 15vw, 4.75rem)/1.1 var(--f-display); color: var(--accent); min-width: 0; }
@@ -392,7 +400,7 @@
   /* ---- English synopsis ---- */
   function enBox(key) {
     var e = SYN[key]; if (!e) return '';
-    return '<section class="en" lang="en"><p class="eh">In English</p><p class="et">' + esc(e.t) + '</p><p>' + esc(e.s) + '</p></section>';
+    return '<details class="en" lang="en"><summary><span class="eh">In English</span><span class="et">' + esc(e.t) + '</span></summary><p>' + esc(e.s) + '</p></details>';
   }
   function enTitle(key) { var e = SYN[key]; return e && e.t ? '<span class="le" lang="en">' + esc(e.t) + '</span>' : ''; }
 
@@ -432,7 +440,7 @@
     var me = visitor();
     function drawStars(mine, avg, cnt) {
       var s = document.getElementById('stars'); if (!s) return; var h = '';
-      for (var k = 1; k <= 5; k++) h += '<button type="button" data-star="' + k + '" class="' + (k <= mine ? 'on' : '') + '" aria-label="' + k + ' நட்சத்திரம்">★</button>';
+      for (var k = 1; k <= 5; k++) h += '<button type="button" data-star="' + k + '" class="' + (mine ? (k <= mine ? 'on' : '') : (k <= Math.round(avg) ? 'av' : '')) + '" aria-label="' + k + ' நட்சத்திரம்">★</button>';
       s.innerHTML = h + '<span class="avg">' + (cnt ? avg.toFixed(1) + ' / 5 · ' + cnt + ' மதிப்பீடுகள்' : 'முதல் மதிப்பீடு உங்களுடையதாகட்டும்') + '</span>';
     }
     function loadRatings() {
@@ -558,7 +566,7 @@
     var a = null; ADDED.forEach(function (x) { if (x.id === id) a = x; });
     if (!a) return '<a class="back" href="#new" data-go="new">← புதியவை</a><p class="note">இது கிடைக்கவில்லை. ஏற்றப்படுகிறது…</p>';
     var s = sectInfo(a.section), bk = s ? s.k : 'new', bl = s ? s.t : 'புதியவை';
-    var en = (a.title_en || a.body_en) ? '<section class="en" lang="en"><p class="eh">In English</p>' + (a.title_en ? '<p class="et">' + esc(a.title_en) + '</p>' : '') + (a.body_en ? '<p>' + esc(a.body_en).replace(/\n/g, '<br>') + '</p>' : '') + '</section>' : '';
+    var en = (a.title_en || a.body_en) ? '<details class="en" lang="en"><summary><span class="eh">In English</span>' + (a.title_en ? '<span class="et">' + esc(a.title_en) + '</span>' : '') + '</summary>' + (a.body_en ? '<p>' + esc(a.body_en).replace(/\n/g, '<br>') + '</p>' : '') + '</details>' : '';
     var poem = a.section === 'poems';
     return '<a class="back" href="#' + bk + '" data-go="' + bk + '">← ' + esc(bl) + '</a>' +
       '<div class="rhead"><span class="tile">' + icon(pieceIc(a), a.id + 3) + '</span><div><h1 class="work-title">' + esc(a.title) + '</h1><div class="work-meta">' + fmtDate(a.created_at) + '</div></div></div>' + en +
@@ -639,13 +647,14 @@
     var ti = Math.floor(Date.now() / 864e5) % POEMS.length, tp = POEMS[ti];
     var wave = '<svg class="wave" viewBox="0 0 400 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 7 Q16.7 0 33.3 7 T66.7 7 T100 7 T133.3 7 T166.7 7 T200 7 T233.3 7 T266.7 7 T300 7 T333.3 7 T366.7 7 T400 7" style="fill:none;stroke:var(--accent);stroke-width:1.5;opacity:.5"/></svg>';
     return '<section class="hero"><div class="band" style="--banner:url(' + BANNER + ')"><p class="eyebrow">கவிதைத் தொகுப்பு</p><h1>' + esc(BOOK.title) + '</h1>' +
-      '<p class="by">' + esc(BOOK.author) + ' <span>(' + esc(BOOK.pen) + ')</span></p></div><div class="slab" aria-hidden="true"></div>' +
+      '<p class="by"><span class="nm">' + esc(BOOK.author) + '</span> <span>(' + esc(BOOK.pen) + ')</span></p></div><div class="slab" aria-hidden="true"></div>' +
       '<div class="lower"><blockquote class="epi">என் கிறுக்கல்கள் எல்லாம் கடற்கரை கிளிஞ்சல்கள் போல.<cite>என்னுரையிலிருந்து</cite></blockquote>' +
       '<div class="shore" aria-hidden="true"><div>' + shell(3, 0) + '</div><div>' + shell(8, 1) + '</div><div>' + shell(11, 3) + '</div><div>' + shell(6, 2) + '</div><div>' + shell(15, 0) + '</div></div><div class="dash" aria-hidden="true"></div>' +
-      visBlock() + tilesHtml() + '</div></section>' +
+      visBlock() + '</div></section>' +
       latestNew() + '<h2 class="sec">இன்றைய கிளிஞ்சல்</h2>' +
       '<a class="today" href="#' + id(ti) + '" data-go="' + id(ti) + '"><span class="tile">' + shell(ti + 1) + '</span><div><h3>' + esc(tp.t) + '</h3>' +
-      '<p class="ex">' + esc(tp.b.split('\n\n')[0]) + '</p><span class="more">முழுதாகப் படிக்க →</span></div></a>';
+      '<p class="ex">' + esc(tp.b.split('\n\n')[0]) + '</p><span class="more">முழுதாகப் படிக்க →</span></div></a>' +
+      '<h2 class="sec">பகுதிகள்</h2>' + tilesHtml();
   }
 
   function poemsPage() {
@@ -684,7 +693,7 @@
       '<div class="rhead"><span class="tile">' + (pre === 'm' ? tileFor(p, i + 61) : pre === 'k' ? tileFor(p, i + 101) : shell(i + 1)) + '</span><div><h1 class="work-title">' + esc(p.t) + '</h1>' +
       '<div class="work-meta">' + meta + '</div></div></div>' + enBox(pre + (i + 1)) +
       tools() + (p.im ? '<figure class="ph"><img src="' + esc(p.im) + '" alt=""></figure>' : '') + (p.pr ? '<article>' : '<article class="poem">') + body + '</article>' +
-      socialBox(pre + (i + 1)) + '<nav class="pn" aria-label="அடுத்த கவிதை">' + pn(prev, i - 1, -1) + pn(next, i + 1, 1) + '</nav>';
+      '<nav class="pn" aria-label="அடுத்த கவிதை">' + pn(prev, i - 1, -1) + pn(next, i + 1, 1) + '</nav>' + socialBox(pre + (i + 1));
   }
 
   function storiesPage() {
@@ -711,7 +720,7 @@
       (s.ic ? '<div class="rhead"><span class="tile">' + icon(s.ic, i + 7) + '</span><div><h1 class="work-title">' + esc(s.t) + '</h1><div class="work-meta">' + (i + 1) + ' / ' + L.length + ' · ' + Math.max(1, Math.round(s.w / 180)) + ' நிமிட வாசிப்பு</div></div></div>' : '<h1 class="page-title">' + esc(s.t) + '</h1><div class="work-meta">' + (i + 1) + ' / ' + L.length + ' · ' + Math.max(1, Math.round(s.w / 180)) + ' நிமிட வாசிப்பு</div>') +
       (pre === 'd' ? '<p class="note">தனியுரிமைக்காக இந்த நாட்குறிப்பிலுள்ள பெயர்கள் மாற்றப்பட்டுள்ளன.</p>' : '') + enBox(pre + (i + 1)) +
       (s.enc && !s.b.length ? '<form class="lock" data-lock="' + (i) + '"><p>இந்தப் பகுதி பூட்டப்பட்டுள்ளது. கடவுச்சொல்லை உள்ளிடுங்கள்.</p><label class="lbl" for="pw">கடவுச்சொல்</label><input id="pw" type="password" autocomplete="off"><button type="submit">திற</button><p class="err" id="lockerr" aria-live="polite"></p></form>' : '') + (s.b.length ? tools() : '') + (s.im ? '<figure class="ph"><img src="' + esc(s.im) + '" alt=""></figure>' : '') + '<article>' + body + '</article>' + (s.b.length ? '<p class="sign"><span>' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')</span></p>' : '') +
-      socialBox(pre + (i + 1)) + '<nav class="pn" aria-label="அடுத்தது">' + pn(prev, i - 1, -1) + pn(next, i + 1, 1) + '</nav>';
+      '<nav class="pn" aria-label="அடுத்தது">' + pn(prev, i - 1, -1) + pn(next, i + 1, 1) + '</nav>' + socialBox(pre + (i + 1));
   }
   function groupedList(L, pre) {
     var out = '', g = null;
