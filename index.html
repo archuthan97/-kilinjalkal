@@ -260,6 +260,23 @@
   .picker button.on { border-color: var(--accent); }
   .picker .none { font: 600 0.75rem var(--f-ui); }
   .adm h2.sec { margin-top: 1.5rem; }
+  .admtabs { display: flex; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--rule); margin: 0.75rem 0 1.25rem; }
+  .admtabs::-webkit-scrollbar { display: none; }
+  .admtabs button { flex: 0 0 auto; font: 600 0.8125rem/1.4 var(--f-ui); padding: 0.6rem 0.45rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); white-space: nowrap; }
+  .admtabs button[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }
+  .adm .hint { font: 400 0.8125rem/1.6 var(--f-ui); color: var(--muted); margin: -0.2rem 0 0.2rem; }
+  .adm details.opt { border: 1px solid var(--rule); padding: 0.6rem 0.75rem; }
+  .adm details.opt[open] { display: grid; gap: 0.6rem; }
+  .adm details summary { font: 600 0.875rem/1.4 var(--f-ui); cursor: pointer; }
+  .pk summary { display: flex; align-items: center; gap: 0.75rem; list-style: none; padding: 0.4rem; border: 1px solid var(--rule); }
+  .pk summary::-webkit-details-marker { display: none; }
+  .pk summary > span:last-child { color: var(--accent); }
+  .pk-cur { width: 2.75rem; height: 2.75rem; flex: none; display: grid; place-items: center; padding: 0.25rem; background: var(--tile); border-radius: 6px; font: 600 0.6875rem var(--f-ui); }
+  .pk-cur svg { width: 100%; height: 100%; }
+  .pk[open] summary { margin-bottom: 0.5rem; }
+  .adm button.go { justify-self: stretch; padding: 0.75rem 1rem; margin-top: 0.4rem; }
+  .adm .out { margin-top: 2rem; }
+  .adm .out button { font: 600 0.875rem var(--f-ui); padding: 0.5rem 1rem; border: 1px solid var(--rule); background: transparent; color: var(--muted); }
 
   @media (max-width: 480px) {
     .today { gap: 0.9rem; }
@@ -444,6 +461,7 @@
     if (auth.token) h.Authorization = 'Bearer ' + auth.token;
     if (opt.prefer) h.Prefer = opt.prefer;
     return fetch(SB.url + path, { method: opt.method || 'GET', headers: h, body: opt.body ? JSON.stringify(opt.body) : undefined }).then(function (r) {
+      if (r.status === 401 && auth.token) { auth.token = ''; try { sessionStorage.removeItem('kj-token'); } catch (x) {} return sb(path, opt); }
       if (!r.ok) throw new Error(r.status);
       return r.status === 204 ? null : r.text().then(function (x) { return x ? JSON.parse(x) : null; });
     });
@@ -516,12 +534,12 @@
     });
   }
   /* ---- tabs and new writing ---- */
-  var BUILTIN = [{ k: 'poems', t: 'கவிதைகள்', ic: 'pen' }, { k: 'stories', t: 'கதைகள்', ic: 'lantern' }, { k: 'diary', t: 'வியட்னாம் டயறி', ic: 'plane' }, { k: 'kirukkal', t: 'கிறுக்கல்கள்', ic: 'leaf' }];
-  var SECTS = [], SITEN = null, SITEBUSY = false, editId = null;
+  var BUILTIN = [{ k: 'poems', t: 'கவிதைகள்', ic: 'pen', en: 'Poems' }, { k: 'stories', t: 'கதைகள்', ic: 'lantern', en: 'Stories' }, { k: 'diary', t: 'வியட்னாம் டயறி', ic: 'plane', en: 'Vietnam Diary' }, { k: 'kirukkal', t: 'கிறுக்கல்கள்', ic: 'leaf', en: 'Scribbles' }];
+  var SECTS = [], SITEN = null, SITEBUSY = false, editId = null, ADMTAB = 'ana';
   function tabs() {
     var o = BUILTIN.slice();
     SECTS.forEach(function (s) { o.push({ k: 'c-' + s.key, t: s.title, ic: s.icon || 'drop', en: s.title_en }); });
-    o.push({ k: 'about', t: 'நூல்', ic: 'book' });
+    o.push({ k: 'about', t: 'நூல்', ic: 'book', en: 'The Book' });
     return o;
   }
   function sectInfo(key) {
@@ -548,7 +566,7 @@
     return '<h2 class="sec">புதியவை · New</h2>' + addedList(ADDED.slice(0, 4)) + (ADDED.length > 4 ? '<p><a class="btn" href="#new" data-go="new">எல்லாவற்றையும் காண →</a></p>' : '');
   }
   function tilesHtml() {
-    var all = tabs().filter(function (x) { return x.k !== 'about'; }).concat([{ k: 'foreword', t: 'என்னுரை', ic: 'moon' }, { k: 'about', t: 'நூல்', ic: 'book' }]);
+    var all = tabs().filter(function (x) { return x.k !== 'about'; }).concat([{ k: 'foreword', t: 'என்னுரை', ic: 'moon', en: 'Foreword' }, { k: 'about', t: 'நூல்', ic: 'book', en: 'The Book' }]);
     return '<div class="tiles">' + all.map(function (x, i) {
       return '<a class="tl" href="#' + x.k + '" data-go="' + x.k + '"><span class="tile">' + icon(x.ic, i + 40) + '</span><span>' + esc(x.t) + '</span>' + (x.en ? '<span class="le" lang="en">' + esc(x.en) + '</span>' : '') + '</a>';
     }).join('') + '</div>';
@@ -624,26 +642,32 @@
       tools() + '<article class="md' + (poem ? ' poem' : '') + '">' + mdBody(a.body, poem) + '</article>' + socialBox('n' + a.id);
   }
   function picker(target, cur) {
-    return '<div class="picker" data-for="' + target + '"><button type="button" class="none' + (cur ? '' : ' on') + '" data-pick="" data-for="' + target + '">இயல்பு</button>' +
-      Object.keys(ICONS).map(function (n, i) { return '<button type="button" class="' + (cur === n ? 'on' : '') + '" data-pick="' + n + '" data-for="' + target + '" aria-label="' + n + '">' + icon(n, i + 5) + '</button>'; }).join('') + '</div>';
+    return '<details class="pk"><summary><span class="pk-cur" id="' + target + '-cur">' + (cur ? icon(cur, 3) : 'இயல்பு') + '</span><span>படத்தைத் தேர்ந்தெடு</span></summary><div class="picker" data-for="' + target + '"><button type="button" class="none' + (cur ? '' : ' on') + '" data-pick="" data-for="' + target + '">இயல்பு</button>' +
+      Object.keys(ICONS).map(function (n, i) { return '<button type="button" class="' + (cur === n ? 'on' : '') + '" data-pick="' + n + '" data-for="' + target + '" aria-label="' + n + '">' + icon(n, i + 5) + '</button>'; }).join('') + '</div></details>';
   }
   function adminPage() {
     if (!sbOn()) return '<h1 class="page-title">நிர்வாகம்</h1><p class="note">இந்த வசதி இன்னும் இணைக்கப்படவில்லை.</p>';
     if (!auth.token) return '<h1 class="page-title">நிர்வாகம்</h1><form class="adm" id="login"><label for="ae">மின்னஞ்சல்</label><input id="ae" type="email" autocomplete="username" required><label for="ap">கடவுச்சொல்</label><input id="ap" type="password" autocomplete="current-password" required><button class="go" type="submit">உள்நுழை</button><span class="err" id="aerr" aria-live="polite"></span></form>';
     var ed = null; ADDED.forEach(function (x) { if (x.id === editId) ed = x; });
     var opts = BUILTIN.filter(function (b) { return b.k !== 'diary'; }).map(function (b) { return [b.k, b.t]; }).concat(SECTS.map(function (s) { return [s.key, s.title]; }));
-    return '<h1 class="page-title">நிர்வாகம்</h1><div class="adm">' +
-      '<h2 class="sec">தள ஆய்வு · Analytics</h2><div id="ana" class="ana"><p class="note">ஏற்றப்படுகிறது…</p></div>' +
-      '<h2 class="sec">' + (ed ? 'பதிவைத் திருத்து' : 'புதிய பதிவு') + '</h2><form class="adm" id="addf"><label for="as">எந்தத் தாவலில்?</label><select id="as">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (ed && ed.section === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>' +
+    var at = ADMTAB, hasEn = ed && (ed.title_en || ed.body_en);
+    var nav = '<div class="admtabs" role="tablist">' + [['ana', 'ஆய்வு'], ['post', ed ? 'திருத்து' : 'புதிய பதிவு'], ['list', 'பதிவுகள் (' + ADDED.length + ')'], ['tabs', 'தாவல்கள்']].map(function (x) {
+      return '<button type="button" role="tab" data-admtab="' + x[0] + '" aria-selected="' + (at === x[0]) + '">' + x[1] + '</button>';
+    }).join('') + '</div>';
+    var body;
+    if (at === 'post') body = '<form class="adm" id="addf"><label for="as">எந்தத் தாவலில்?</label><select id="as">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (ed && ed.section === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>' +
       '<label for="at">தலைப்பு</label><input id="at" required value="' + esc(ed ? ed.title : '') + '">' +
-      '<label for="ab">உள்ளடக்கம் (பத்திகளுக்கிடையே வெற்று வரி. ## தலைப்பு, - பட்டியல், **தடித்த**, [இணைப்பு](https://…) பயன்படுத்தலாம்)</label><textarea id="ab" required style="min-height:14rem">' + esc(ed ? ed.body : '') + '</textarea>' +
-      '<label for="ate">English title</label><input id="ate" value="' + esc(ed ? ed.title_en || '' : '') + '"><label for="abe">English synopsis</label><textarea id="abe">' + esc(ed ? ed.body_en || '' : '') + '</textarea>' +
+      '<label for="ab">உள்ளடக்கம்</label><textarea id="ab" required style="min-height:14rem">' + esc(ed ? ed.body : '') + '</textarea>' +
+      '<p class="hint">பத்திகளுக்கிடையே ஒரு வெற்று வரி விடுங்கள். விரும்பினால்: ## உபதலைப்பு · - பட்டியல் · **தடித்த எழுத்து** · [இணைப்பு](https://…)</p>' +
+      '<details class="opt"' + (hasEn ? ' open' : '') + '><summary>English (விரும்பினால்)</summary><label for="ate">English title</label><input id="ate" value="' + esc(ed ? ed.title_en || '' : '') + '"><label for="abe">English synopsis</label><textarea id="abe">' + esc(ed ? ed.body_en || '' : '') + '</textarea></details>' +
       '<label>படம் (icon)</label>' + picker('aic', ed ? ed.icon || '' : '') + '<input type="hidden" id="aic" value="' + esc(ed ? ed.icon || '' : '') + '">' +
-      '<button class="go" type="submit">' + (ed ? 'சேமி' : 'வெளியிடு') + '</button><span class="err" id="aerr" aria-live="polite"></span>' + (ed ? '<button type="button" class="del" data-cancel="1">திருத்தத்தை ரத்து செய்</button>' : '') + '</form>' +
-      '<h2 class="sec">புதிய தாவல் (tab)</h2><form class="adm" id="tabf"><label for="tt">தாவலின் பெயர்</label><input id="tt" required placeholder="மருத்துவம்"><label for="tte">English name</label><input id="tte" placeholder="Medicine"><label>படம் (icon)</label>' + picker('tic', '') + '<input type="hidden" id="tic"><button class="go" type="submit">தாவலைச் சேர்</button><span class="err" id="terr" aria-live="polite"></span></form>' +
-      '<h2 class="sec">உங்கள் தாவல்கள்</h2>' + (SECTS.length ? SECTS.map(function (s) { return '<div class="cm-i"><b>' + esc(s.title) + '</b><time>' + esc(s.title_en || '') + '</time><button class="del" type="button" data-rmt="' + esc(s.key) + '">நீக்கு</button></div>'; }).join('') : '<p class="note">இன்னும் புதிய தாவல் இல்லை.</p>') +
-      '<h2 class="sec">உங்கள் பதிவுகள்</h2>' + (ADDED.length ? ADDED.map(function (a) { return '<div class="cm-i"><b>' + esc(a.title) + '</b><time>' + esc((sectInfo(a.section) || { t: a.section }).t) + '</time><button class="del" type="button" data-edit="' + a.id + '">திருத்து</button><button class="del" type="button" data-rm="' + a.id + '">நீக்கு</button></div>'; }).join('') : '<p class="note">இன்னும் இல்லை.</p>') +
-      '<p><button type="button" id="logout" style="font:600 .9375rem var(--f-ui);padding:.5rem 1rem;border:2px solid var(--ink);background:transparent;color:var(--ink)">வெளியேறு</button></p></div>';
+      '<button class="go" type="submit">' + (ed ? 'சேமி' : 'வெளியிடு') + '</button><span class="err" id="aerr" aria-live="polite"></span>' + (ed ? '<button type="button" class="del" data-cancel="1">திருத்தத்தை ரத்து செய்</button>' : '') + '</form>';
+    else if (at === 'list') body = ADDED.length ? ADDED.map(function (a) { return '<div class="cm-i"><b>' + esc(a.title) + '</b><time>' + esc((sectInfo(a.section) || { t: a.section }).t) + '</time><button class="del" type="button" data-edit="' + a.id + '">திருத்து</button><button class="del" type="button" data-rm="' + a.id + '">நீக்கு</button></div>'; }).join('') : '<p class="note">இன்னும் இல்லை. "புதிய பதிவு" தாவலில் சேர்க்கலாம்.</p>';
+    else if (at === 'tabs') body = '<h2 class="sec">புதிய தாவல்</h2><form class="adm" id="tabf"><label for="tt">தாவலின் பெயர்</label><input id="tt" required placeholder="மருத்துவம்"><label for="tte">English name</label><input id="tte" required placeholder="Medicine"><label>படம் (icon)</label>' + picker('tic', '') + '<input type="hidden" id="tic"><button class="go" type="submit">தாவலைச் சேர்</button><span class="err" id="terr" aria-live="polite"></span></form>' +
+      '<h2 class="sec">உங்கள் தாவல்கள்</h2>' + (SECTS.length ? SECTS.map(function (s) { return '<div class="cm-i"><b>' + esc(s.title) + '</b><time>' + esc(s.title_en || '') + '</time><button class="del" type="button" data-rmt="' + esc(s.key) + '">நீக்கு</button></div>'; }).join('') : '<p class="note">இன்னும் புதிய தாவல் இல்லை.</p>');
+    else body = '<div id="ana" class="ana"><p class="note">ஏற்றப்படுகிறது…</p></div>';
+    return '<h1 class="page-title">நிர்வாகம்</h1>' + nav + '<div class="adm">' + body +
+      '<p class="out"><button type="button" id="logout">வெளியேறு</button></p></div>';
   }
   function pieceTitle(k) {
     var m = /^([a-z])(\d+)$/.exec(k); if (!m) return k;
@@ -730,7 +754,7 @@
       e.preventDefault();
       var body = { section: document.getElementById('as').value, title: document.getElementById('at').value.trim(), body: document.getElementById('ab').value.trim(), title_en: document.getElementById('ate').value.trim() || null, body_en: document.getElementById('abe').value.trim() || null, icon: document.getElementById('aic').value || null };
       var req = editId ? sb('/rest/v1/added_pieces?id=eq.' + editId, { method: 'PATCH', prefer: 'return=minimal', body: body }) : sb('/rest/v1/added_pieces', { method: 'POST', prefer: 'return=minimal', body: body });
-      req.then(function () { editId = null; loadAdded(true); }).catch(bad);
+      req.then(function () { editId = null; ADMTAB = 'list'; loadAdded(true); }).catch(bad);
     } else if (f.id === 'tabf') {
       e.preventDefault();
       var ti = document.getElementById('tt').value.trim(), te = document.getElementById('tte').value.trim(), key = slug(te) || ('t' + Date.now().toString(36));
@@ -739,15 +763,18 @@
     }
   });
   document.addEventListener('click', function (e) {
-    var t = e.target && e.target.closest ? e.target.closest('#logout,[data-pick],[data-edit],[data-rm],[data-rmt],[data-cancel]') : null; if (!t) return;
-    if (t.id === 'logout') { auth.token = ''; try { sessionStorage.removeItem('kj-token'); } catch (x) {} render(); return; }
+    var t = e.target && e.target.closest ? e.target.closest('#logout,[data-pick],[data-edit],[data-rm],[data-rmt],[data-cancel],[data-admtab]') : null; if (!t) return;
+    if (t.id === 'logout') { auth.token = ''; ADMTAB = 'ana'; try { sessionStorage.removeItem('kj-token'); } catch (x) {} render(); return; }
+    if (t.hasAttribute('data-admtab')) { ADMTAB = t.getAttribute('data-admtab'); render(); return; }
     if (t.hasAttribute('data-pick')) {
       var tg = t.getAttribute('data-for'), box = t.closest('.picker');
       box.querySelectorAll('button').forEach(function (b) { b.classList.remove('on'); }); t.classList.add('on');
-      document.getElementById(tg).value = t.getAttribute('data-pick'); return;
+      document.getElementById(tg).value = t.getAttribute('data-pick');
+      var cu = document.getElementById(tg + '-cur'); if (cu) cu.innerHTML = t.getAttribute('data-pick') ? icon(t.getAttribute('data-pick'), 3) : 'இயல்பு';
+      var dt = t.closest('details'); if (dt) dt.open = false; return;
     }
-    if (t.hasAttribute('data-cancel')) { editId = null; render(); return; }
-    if (t.hasAttribute('data-edit')) { editId = parseInt(t.getAttribute('data-edit'), 10); render(); window.scrollTo(0, 0); return; }
+    if (t.hasAttribute('data-cancel')) { editId = null; ADMTAB = 'list'; render(); return; }
+    if (t.hasAttribute('data-edit')) { editId = parseInt(t.getAttribute('data-edit'), 10); ADMTAB = 'post'; render(); window.scrollTo(0, 0); return; }
     var kind = t.hasAttribute('data-rm') ? 'rm' : 'rmt';
     if (!t.getAttribute('data-sure')) { t.setAttribute('data-sure', '1'); t.textContent = 'உறுதிப்படுத்து'; return; }
     var path = kind === 'rm' ? '/rest/v1/added_pieces?id=eq.' + t.getAttribute('data-rm') : '/rest/v1/sections?key=eq.' + encodeURIComponent(t.getAttribute('data-rmt'));
