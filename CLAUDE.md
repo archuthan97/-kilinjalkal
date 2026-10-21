@@ -1,10 +1,10 @@
 # கிளிஞ்சல்கள் site (kilinjalkal.netlify.app)
 
-Single-file static site: `index.html` (HTML + CSS + vanilla JS, no build step, ~800 KB because poems/stories/images are embedded).
+Static site: `index.html` (HTML + CSS + vanilla JS, no build step, ~730 KB because poems/stories are embedded) plus photos in `img/` (cover, banner, beach, author; `img/banner.jpg` is also the link-preview image).
 Hosted on Netlify (auto-deploys from the `main` branch). Backend: Supabase (comments, ratings, view counts, `#admin` login, added pieces, custom tabs).
 
 ## Rules
-- Edit `index.html` directly. Never rewrite the whole file; use targeted edits (grep for the function or CSS class first). The large embedded data lines (POEMS, STORIES, DIARY, KIR, SYN, images) must not be touched or reformatted.
+- Edit `index.html` directly. Never rewrite the whole file; use targeted edits (grep for the function or CSS class first). The large embedded data lines (POEMS, STORIES, DIARY, KIR, SYN) must not be touched or reformatted. Photos live in `img/`, not as base64 in the page.
 - Do not remove or change `SB = { url, key }`. The publishable key is public by design. Never add the Supabase secret/service key anywhere.
 - Content is Tamil; keep fonts, `lang` attributes and the existing design tokens (--ink, --paper, --accent, etc.). Mobile first: test at 390px width, no horizontal scroll.
 - Social features (comments, ratings, counters, admin) only work on the live Netlify site, not when opened as a local file with network blocked.
