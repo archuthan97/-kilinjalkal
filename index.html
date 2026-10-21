@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>கிளிஞ்சல்கள்</title></head><body>
+<!doctype html><html lang="ta"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>கிளிஞ்சல்கள்</title><meta name="description" content="அர்ச்சுதன் நித்தியானந்தன் (வேணு) எழுதிய கவிதைகள், சிறுகதைகள், வியட்னாம் டயறி. Tamil poems and stories by Archuthan Nithiyananthan (Venu)."><meta property="og:type" content="website"><meta property="og:site_name" content="கிளிஞ்சல்கள்"><meta property="og:title" content="கிளிஞ்சல்கள் · அர்ச்சுதன் நித்தியானந்தன் (வேணு)"><meta property="og:description" content="அர்ச்சுதன் நித்தியானந்தன் (வேணு) எழுதிய கவிதைகள், சிறுகதைகள், வியட்னாம் டயறி. Tamil poems and stories by Archuthan Nithiyananthan (Venu)."><meta property="og:url" content="https://kilinjalkal.netlify.app/"><meta property="og:image" content="https://kilinjalkal.netlify.app/share.jpg"><meta property="og:image:width" content="1500"><meta property="og:image:height" content="789"><meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#15191B"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2315191B'/%3E%3Cpath d='M16 27 L4 13 Q16 1 28 13 Z' fill='%23E4524B'/%3E%3Cpath d='M16 27 L10 8 M16 27 L16 5 M16 27 L22 8' stroke='%2315191B' stroke-width='1.5'/%3E%3C/svg%3E"></head><body>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -191,6 +191,9 @@
   .cf { display: grid; gap: 0.5rem; margin: 0 0 1.25rem; }
   .cf input, .cf textarea, .adm input, .adm textarea, .adm select { font: inherit; padding: 0.55rem 0.7rem; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 0; max-width: 100%; box-sizing: border-box; width: 100%; }
   .cf textarea, .adm textarea { min-height: 6rem; }
+  .cf[hidden] { display: none; }
+  .cf-open { font: 600 0.9375rem var(--f-ui); padding: 0.55rem 1rem; border: 2px solid var(--ink); background: transparent; margin: 0 0 1.25rem; }
+  .cf-open:hover { border-color: var(--accent); color: var(--accent); }
   .cf button, .adm button.go { justify-self: start; font: 600 0.9375rem var(--f-ui); padding: 0.55rem 1rem; border: 2px solid var(--ink); background: var(--ink); color: var(--paper); border-radius: 0; }
   .cm-i { border-top: 1px solid var(--rule); padding: 0.6rem 0; } .cm-i b { font-weight: 600; } .cm-i time { color: var(--muted); font-size: 0.8125rem; margin-left: 0.5rem; } .cm-i p { margin: 0.2rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
   .cm-i .del { border: 0; background: transparent; color: var(--accent); font-size: 0.8125rem; text-decoration: underline; padding: 0; margin-left: 0.75rem; }
@@ -425,7 +428,7 @@
     if (!sbOn() || key === 'admin') return '';
     return '<section class="soc" id="soc" data-piece="' + key + '"><h2>மதிப்பீடும் கருத்துகளும் <span class="vw" id="vw"></span></h2>' +
       '<div class="stars" id="stars" role="group" aria-label="மதிப்பீடு"></div>' +
-      '<form class="cf" id="cform"><label class="lbl" for="cn">பெயர்</label><input id="cn" maxlength="60" required autocomplete="name"><label class="lbl" for="cb">உங்கள் கருத்து</label><textarea id="cb" maxlength="1000" required></textarea><button type="submit">கருத்தைப் பகிர்</button><span class="err" id="cerr" aria-live="polite"></span></form>' +
+      '<button type="button" class="cf-open" id="cfopen">கருத்து எழுதுக</button><form class="cf" id="cform" hidden><label class="lbl" for="cn">பெயர்</label><input id="cn" maxlength="60" required autocomplete="name"><label class="lbl" for="cb">உங்கள் கருத்து</label><textarea id="cb" maxlength="1000" required></textarea><button type="submit">கருத்தைப் பகிர்</button><span class="err" id="cerr" aria-live="polite"></span></form>' +
       '<div id="clist"></div></section>';
   }
   function fmtDate(s) { try { return new Date(s).toLocaleDateString('ta-LK'); } catch (e) { return ''; } }
@@ -441,7 +444,7 @@
     function drawStars(mine, avg, cnt) {
       var s = document.getElementById('stars'); if (!s) return; var h = '';
       for (var k = 1; k <= 5; k++) h += '<button type="button" data-star="' + k + '" class="' + (mine ? (k <= mine ? 'on' : '') : (k <= Math.round(avg) ? 'av' : '')) + '" aria-label="' + k + ' நட்சத்திரம்">★</button>';
-      s.innerHTML = h + '<span class="avg">' + (cnt ? avg.toFixed(1) + ' / 5 · ' + cnt + ' மதிப்பீடுகள்' : 'முதல் மதிப்பீடு உங்களுடையதாகட்டும்') + '</span>';
+      s.innerHTML = h + '<span class="avg">' + (cnt ? avg.toFixed(1) + ' / 5 · ' + cnt + (cnt === 1 ? ' மதிப்பீடு' : ' மதிப்பீடுகள்') : 'முதல் மதிப்பீடு உங்களுடையதாகட்டும்') + '</span>';
     }
     function loadRatings() {
       sb('/rest/v1/ratings?piece=eq.' + key + '&select=stars,visitor').then(function (rows) {
@@ -466,7 +469,8 @@
         sb('/rest/v1/comments?id=eq.' + b.getAttribute('data-del'), { method: 'DELETE' }).then(loadComments).catch(function () {});
       }
     });
-    var f = document.getElementById('cform');
+    var f = document.getElementById('cform'), fo = document.getElementById('cfopen');
+    fo.addEventListener('click', function () { fo.hidden = true; f.hidden = false; document.getElementById('cn').focus(); });
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var n = document.getElementById('cn').value.trim(), c = document.getElementById('cb').value.trim(), er = document.getElementById('cerr');
@@ -478,7 +482,7 @@
   }
   function totalViews() {
     var el = document.getElementById('tot'); if (!el || !sbOn()) return;
-    sb('/rest/v1/views?select=n').then(function (rows) { var t = 0; rows.forEach(function (r) { t += r.n; }); el.textContent = 'மொத்தப் பார்வைகள்: ' + t; }).catch(function () {});
+    sb('/rest/v1/views?select=n').then(function (rows) { var t = 0; rows.forEach(function (r) { t += r.n; }); el.textContent = 'பார்வைகள்: ' + t; }).catch(function () {});
   }
   /* ---- tabs and new writing ---- */
   var BUILTIN = [{ k: 'poems', t: 'கவிதைகள்', ic: 'pen' }, { k: 'stories', t: 'கதைகள்', ic: 'lantern' }, { k: 'diary', t: 'வியட்னாம் டயறி', ic: 'plane' }, { k: 'kirukkal', t: 'கிறுக்கல்கள்', ic: 'leaf' }];
@@ -650,7 +654,7 @@
       '<p class="by"><span class="nm">' + esc(BOOK.author) + '</span> <span>(' + esc(BOOK.pen) + ')</span></p></div><div class="slab" aria-hidden="true"></div>' +
       '<div class="lower"><blockquote class="epi">என் கிறுக்கல்கள் எல்லாம் கடற்கரை கிளிஞ்சல்கள் போல.<cite>என்னுரையிலிருந்து</cite></blockquote>' +
       '<div class="shore" aria-hidden="true"><div>' + shell(3, 0) + '</div><div>' + shell(8, 1) + '</div><div>' + shell(11, 3) + '</div><div>' + shell(6, 2) + '</div><div>' + shell(15, 0) + '</div></div><div class="dash" aria-hidden="true"></div>' +
-      visBlock() + '</div></section>' +
+      '</div></section>' +
       latestNew() + '<h2 class="sec">இன்றைய கிளிஞ்சல்</h2>' +
       '<a class="today" href="#' + id(ti) + '" data-go="' + id(ti) + '"><span class="tile">' + shell(ti + 1) + '</span><div><h3>' + esc(tp.t) + '</h3>' +
       '<p class="ex">' + esc(tp.b.split('\n\n')[0]) + '</p><span class="more">முழுதாகப் படிக்க →</span></div></a>' +
@@ -794,7 +798,7 @@
     if (wn && addedIn(wn).length) main = main.replace(/(<p class="page-sub">[\s\S]*?<\/p>)/, '$1' + addedBlock(wn));
     document.documentElement.style.setProperty('--scale', state.scale);
     document.getElementById('app').innerHTML = header(active) + main +
-      '<footer>© ' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')' + (sbOn() ? ' · <span class="tot" id="tot"></span> · <a href="#admin" data-go="admin" class="tot">நிர்வாகம்</a>' : '') + '</footer>';
+      '<footer>© ' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')' + (sbOn() ? ' · வருகையாளர்கள்: <span id="visn">' + (SITEN === null ? '…' : SITEN.toLocaleString('en-US')) + '</span> · <span class="tot" id="tot"></span>' : '') + '</footer>';
     if (state.view === 'poems') fillGrid();
     loadSocial(); totalViews(); siteViews();
   }
