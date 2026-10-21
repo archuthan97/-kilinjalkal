@@ -220,6 +220,24 @@
   .tl { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-decoration: none; padding: 0.5rem 0.15rem 0.6rem; border: 1px solid var(--rule); border-radius: 6px; text-align: center; font: 600 0.75rem/1.35 var(--f-ui); min-width: 0; }
   .tl .tile { width: 100%; max-width: 2.75rem; padding: 0.3rem; }
   .tl:hover { border-color: var(--accent); }
+  /* admin analytics */
+  .ana .kp { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.5rem; }
+  .ana .kp div { border: 1px solid var(--rule); border-radius: 6px; padding: 0.6rem 0.75rem; }
+  .ana .kp b { display: block; font: 400 1.75rem/1.2 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ana .kp span { font: 600 0.75rem/1.4 var(--f-ui); color: var(--muted); }
+  .ana h3 { font: 600 0.875rem/1.4 var(--f-ui); margin: 1.75rem 0 0.6rem; }
+  .ana h3 small { font-weight: 400; color: var(--muted); }
+  .days { display: flex; align-items: flex-end; gap: 2px; height: 7rem; border-bottom: 1px solid var(--rule); }
+  .days span { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+  .days i { display: block; width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; }
+  .days span:hover i { opacity: 0.7; }
+  .dax { display: flex; justify-content: space-between; font: 400 0.75rem/1.6 var(--f-ui); color: var(--muted); margin-top: 0.25rem; }
+  .hb { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+  .hb li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.2rem 0.75rem; font: 400 0.9375rem/1.4 var(--f-ui); }
+  .hb a { color: inherit; }
+  .hb .hv { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .hb .hbar { grid-column: 1 / -1; height: 6px; background: var(--tile); border-radius: 3px; overflow: hidden; }
+  .hb .hbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
   /* retro hit counter in the footer (Dr Watson's blog style) */
   .hits { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem 0.75rem; margin: 1.5rem 0 0.5rem; }
   .hits .hl { font: 600 0.8125rem/1.4 var(--f-ui); color: var(--muted); }
@@ -229,6 +247,9 @@
   .live i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.25; } }
   @media (prefers-reduced-motion: reduce) { .live i { animation: none; } }
+  .adm-link { display: block; width: 2.75rem; height: 2.75rem; margin: 0.75rem auto 0; padding: 0.7rem; color: var(--muted); opacity: 0.6; }
+  .adm-link:hover { opacity: 1; color: var(--accent); }
+  .adm-link svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   .md ul, .md ol { margin: 0.5rem 0 1rem 1.25rem; padding: 0; font: 400 calc(1.05rem * var(--scale))/1.9 var(--f-body); }
   .md li { margin: 0.25rem 0; }
   .md blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding: 0.25rem 1rem; color: var(--muted); font: 400 calc(1.05rem * var(--scale))/1.9 var(--f-body); }
@@ -427,6 +448,13 @@
       return r.status === 204 ? null : r.text().then(function (x) { return x ? JSON.parse(x) : null; });
     });
   }
+  function refHost() {
+    try { if (!document.referrer) return null; var h = new URL(document.referrer).hostname.replace(/^www\./, ''); return h === location.hostname ? null : h.slice(0, 100); } catch (e) { return null; }
+  }
+  function logVisit(piece, ref) {
+    if (!sbOn() || auth.token) return;
+    sb('/rest/v1/visits', { method: 'POST', prefer: 'return=minimal', body: { piece: piece, vid: visitor().slice(0, 40), ref: ref || null, dev: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'm' : 'd' } }).catch(function () {});
+  }
   function visitor() {
     try { var v = localStorage.getItem('kj-visitor'); if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('kj-visitor', v); } return v; } catch (e) { return 'anon-' + Math.random().toString(36).slice(2); }
   }
@@ -442,6 +470,7 @@
     var box = document.getElementById('soc'); if (!box || !sbOn()) return;
     var key = box.getAttribute('data-piece');
     var seen = false; try { seen = sessionStorage.getItem('kj-v-' + key); sessionStorage.setItem('kj-v-' + key, '1'); } catch (e) {}
+    if (!seen) logVisit(key);
     (seen ? sb('/rest/v1/views?piece=eq.' + key + '&select=n').then(function (r) { return r && r[0] ? r[0].n : 0; })
           : sb('/rest/v1/rpc/bump_view', { method: 'POST', body: { p: key } })).then(function (n) {
       var v = document.getElementById('vw'); if (v) v.textContent = '· ' + n + ' பார்வைகள்';
@@ -527,17 +556,16 @@
   var SHOWN = 0, SITEPOLL = null;
   function odo(n) { return String(n).padStart(6, '0').split('').map(function (d) { return '<b>' + d + '</b>'; }).join(''); }
   function paintVis() {
-    var from = SHOWN, to = SITEN, t0 = null;
+    var from = SHOWN, to = SITEN, t0 = Date.now();
     if (to === null || to === from) return;
     SHOWN = to;
     var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    function step(ts) {
-      if (t0 === null) t0 = ts;
-      var k = still ? 1 : Math.min(1, (ts - t0) / 1400), v = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+    function step() {
+      var k = still ? 1 : Math.min(1, (Date.now() - t0) / 1400), v = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
       var el = document.getElementById('visn'); if (el) { el.innerHTML = odo(v); el.setAttribute('aria-label', to + ' வருகையாளர்கள்'); }
-      if (k < 1) requestAnimationFrame(step);
+      if (k < 1) setTimeout(step, 30);
     }
-    requestAnimationFrame(step);
+    step();
   }
   function siteNow() { return sb('/rest/v1/views?piece=eq.site&select=n').then(function (r) { return r && r[0] ? Number(r[0].n) || 0 : 0; }); }
   function siteViews() {
@@ -545,6 +573,7 @@
     if (SITEN !== null || SITEBUSY) return;
     SITEBUSY = true;
     var seen = false; try { seen = sessionStorage.getItem('kj-site'); sessionStorage.setItem('kj-site', '1'); } catch (e) {}
+    if (!seen) logVisit('site', refHost());
     (seen ? siteNow() : sb('/rest/v1/rpc/bump_view', { method: 'POST', body: { p: 'site' } })).then(function (n) {
       SITEN = Number(n) || 0; paintVis();
       if (!SITEPOLL) SITEPOLL = setInterval(function () {
@@ -604,6 +633,7 @@
     var ed = null; ADDED.forEach(function (x) { if (x.id === editId) ed = x; });
     var opts = BUILTIN.filter(function (b) { return b.k !== 'diary'; }).map(function (b) { return [b.k, b.t]; }).concat(SECTS.map(function (s) { return [s.key, s.title]; }));
     return '<h1 class="page-title">நிர்வாகம்</h1><div class="adm">' +
+      '<h2 class="sec">தள ஆய்வு · Analytics</h2><div id="ana" class="ana"><p class="note">ஏற்றப்படுகிறது…</p></div>' +
       '<h2 class="sec">' + (ed ? 'பதிவைத் திருத்து' : 'புதிய பதிவு') + '</h2><form class="adm" id="addf"><label for="as">எந்தத் தாவலில்?</label><select id="as">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (ed && ed.section === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>' +
       '<label for="at">தலைப்பு</label><input id="at" required value="' + esc(ed ? ed.title : '') + '">' +
       '<label for="ab">உள்ளடக்கம் (பத்திகளுக்கிடையே வெற்று வரி. ## தலைப்பு, - பட்டியல், **தடித்த**, [இணைப்பு](https://…) பயன்படுத்தலாம்)</label><textarea id="ab" required style="min-height:14rem">' + esc(ed ? ed.body : '') + '</textarea>' +
@@ -614,6 +644,78 @@
       '<h2 class="sec">உங்கள் தாவல்கள்</h2>' + (SECTS.length ? SECTS.map(function (s) { return '<div class="cm-i"><b>' + esc(s.title) + '</b><time>' + esc(s.title_en || '') + '</time><button class="del" type="button" data-rmt="' + esc(s.key) + '">நீக்கு</button></div>'; }).join('') : '<p class="note">இன்னும் புதிய தாவல் இல்லை.</p>') +
       '<h2 class="sec">உங்கள் பதிவுகள்</h2>' + (ADDED.length ? ADDED.map(function (a) { return '<div class="cm-i"><b>' + esc(a.title) + '</b><time>' + esc((sectInfo(a.section) || { t: a.section }).t) + '</time><button class="del" type="button" data-edit="' + a.id + '">திருத்து</button><button class="del" type="button" data-rm="' + a.id + '">நீக்கு</button></div>'; }).join('') : '<p class="note">இன்னும் இல்லை.</p>') +
       '<p><button type="button" id="logout" style="font:600 .9375rem var(--f-ui);padding:.5rem 1rem;border:2px solid var(--ink);background:transparent;color:var(--ink)">வெளியேறு</button></p></div>';
+  }
+  function pieceTitle(k) {
+    var m = /^([a-z])(\d+)$/.exec(k); if (!m) return k;
+    var i = parseInt(m[2], 10), it = null;
+    if (m[1] === 'n') ADDED.forEach(function (x) { if (x.id === i) it = { t: x.title }; });
+    else { var L = { p: POEMS, m: MORE, s: STORIES, d: DIARY, k: KIR }[m[1]]; it = L && L[i - 1]; }
+    return it ? it.t : k;
+  }
+  function pieceLink(k) { return '<a href="#' + esc(k) + '" data-go="' + esc(k) + '">' + esc(pieceTitle(k)) + '</a>'; }
+  function hbars(rows) {
+    var max = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
+    return '<ol class="hb">' + rows.map(function (r) {
+      return '<li><span>' + r[0] + '</span><span class="hv">' + (r[2] || r[1]) + '</span><span class="hbar"><i style="width:' + Math.max(2, Math.round(r[1] / max * 100)) + '%"></i></span></li>';
+    }).join('') + '</ol>';
+  }
+  function srcName(h) {
+    if (!h) return 'நேரடி / தெரியவில்லை';
+    if (/whatsapp/.test(h)) return 'WhatsApp'; if (/facebook|fb\./.test(h)) return 'Facebook'; if (/instagram/.test(h)) return 'Instagram';
+    if (/google/.test(h)) return 'Google'; if (/^t\.co$|twitter|^x\.com/.test(h)) return 'X / Twitter'; if (/bing/.test(h)) return 'Bing';
+    return h;
+  }
+  function tally(list, f) { var o = {}; list.forEach(function (x) { var k = f(x); o[k] = (o[k] || 0) + 1; }); return Object.keys(o).map(function (k) { return [k, o[k]]; }).sort(function (a, b) { return b[1] - a[1]; }); }
+  function anaBody(views, ratings, comments, visits) {
+    var site = 0, per = [];
+    views.forEach(function (v) { if (v.piece === 'site') site = v.n; else per.push([v.piece, v.n]); });
+    per.sort(function (a, b) { return b[1] - a[1]; });
+    var rsum = 0; ratings.forEach(function (r) { rsum += r.stars; });
+    var tiles = [[site, 'மொத்த வருகைகள்']];
+    var sv = visits ? visits.filter(function (v) { return v.piece === 'site'; }) : [];
+    if (visits) {
+      var now = Date.now(), today = new Date().toLocaleDateString('en-CA');
+      var uniq = function (l) { var o = {}; l.forEach(function (v) { o[v.vid] = 1; }); return Object.keys(o).length; };
+      tiles.push([uniq(visits.filter(function (v) { return now - new Date(v.created_at) < 6e5; })), 'இப்போது வாசிப்போர்']);
+      tiles.push([sv.filter(function (v) { return new Date(v.created_at).toLocaleDateString('en-CA') === today; }).length, 'இன்று']);
+      tiles.push([sv.filter(function (v) { return now - new Date(v.created_at) < 6048e5; }).length, 'கடந்த 7 நாள்']);
+      tiles.push([uniq(visits), 'தனி வாசகர்கள் (30 நாள்)']);
+    }
+    tiles.push([comments.length, 'கருத்துகள்']);
+    tiles.push([ratings.length ? (rsum / ratings.length).toFixed(1) + '★' : '–', ratings.length + ' மதிப்பீடுகள்']);
+    var h = '<div class="kp">' + tiles.map(function (t) { return '<div><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join('') + '</div>';
+    if (!visits) h += '<p class="note">நாள்தோறும் வருகை, வாசகர்கள் எங்கிருந்து வருகிறார்கள், கைபேசியா கணினியா என்பவற்றைக் காண Supabase இல் supabase-analytics.sql ஐ ஒருமுறை இயக்குங்கள்.</p>';
+    else if (!sv.length) h += '<p class="note">வருகைத் தரவு இப்போதுதான் சேகரிக்கப்படுகிறது. வாசகர்கள் வரும்போது இங்கே வரைபடங்கள் தோன்றும்.</p>';
+    else {
+      var days = [], by = {}; sv.forEach(function (v) { var k = new Date(v.created_at).toLocaleDateString('en-CA'); by[k] = (by[k] || 0) + 1; });
+      for (var d = 29; d >= 0; d--) { var dt = new Date(Date.now() - d * 864e5), k = dt.toLocaleDateString('en-CA'); days.push([dt, by[k] || 0]); }
+      var mx = Math.max.apply(null, days.map(function (x) { return x[1]; }).concat([1]));
+      var fmt = function (x) { return x.toLocaleDateString('ta-LK', { day: 'numeric', month: 'short' }); };
+      h += '<h3>நாள்தோறும் வருகை · கடந்த 30 நாள் <small>(அதிகபட்சம் ' + mx + ')</small></h3><div class="days" role="img" aria-label="கடந்த 30 நாளில் ' + sv.length + ' வருகைகள்">' +
+        days.map(function (x) { return '<span title="' + fmt(x[0]) + ': ' + x[1] + '"><i style="height:' + (x[1] ? Math.max(3, Math.round(x[1] / mx * 100)) : 0) + '%"></i></span>'; }).join('') +
+        '</div><div class="dax"><span>' + fmt(days[0][0]) + '</span><span>' + fmt(days[15][0]) + '</span><span>இன்று</span></div>';
+      h += '<h3>எங்கிருந்து வருகிறார்கள்</h3>' + hbars(tally(sv, function (v) { return srcName(v.ref); }).slice(0, 6).map(function (r) { return [esc(r[0]), r[1]]; }));
+      var ph = sv.filter(function (v) { return v.dev === 'm'; }).length;
+      h += '<h3>கைபேசியா கணினியா</h3>' + hbars([['கைபேசி', ph, Math.round(ph / sv.length * 100) + '%'], ['கணினி', sv.length - ph, Math.round((sv.length - ph) / sv.length * 100) + '%']]);
+    }
+    if (per.length) h += '<h3>அதிகம் வாசிக்கப்பட்டவை</h3>' + hbars(per.slice(0, 10).map(function (r) { return [pieceLink(r[0]), r[1]]; }));
+    var rt = {}; ratings.forEach(function (r) { var o = rt[r.piece] = rt[r.piece] || [0, 0]; o[0] += r.stars; o[1]++; });
+    var top = Object.keys(rt).map(function (k) { return [k, rt[k][0] / rt[k][1], rt[k][1]]; }).sort(function (a, b) { return b[1] - a[1] || b[2] - a[2]; }).slice(0, 5);
+    if (top.length) h += '<h3>அதிக மதிப்பீடு பெற்றவை</h3>' + hbars(top.map(function (r) { return [pieceLink(r[0]), r[1], r[1].toFixed(1) + '★ · ' + r[2]]; }));
+    if (comments.length) h += '<h3>அண்மைய கருத்துகள்</h3>' + comments.slice(0, 5).map(function (c) { return '<div class="cm-i"><b>' + esc(c.name) + '</b><time>' + fmtDate(c.created_at) + ' · ' + pieceLink(c.piece) + '</time><p>' + esc(c.body) + '</p></div>'; }).join('');
+    return h;
+  }
+  function loadAna() {
+    if (!document.getElementById('ana')) return;
+    var since = new Date(Date.now() - 30 * 864e5).toISOString();
+    Promise.all([
+      sb('/rest/v1/views?select=piece,n'),
+      sb('/rest/v1/ratings?select=piece,stars'),
+      sb('/rest/v1/comments?select=piece,name,body,created_at&order=created_at.desc&limit=1000'),
+      sb('/rest/v1/visits?select=piece,vid,ref,dev,created_at&created_at=gte.' + encodeURIComponent(since) + '&order=created_at.asc&limit=20000').catch(function () { return null; })
+    ]).then(function (r) {
+      var el = document.getElementById('ana'); if (el) el.innerHTML = anaBody(r[0] || [], r[1] || [], r[2] || [], r[3]);
+    }).catch(function () { var el = document.getElementById('ana'); if (el) el.innerHTML = '<p class="note">தரவை ஏற்ற இயலவில்லை. வெளியேறி மீண்டும் உள்நுழையுங்கள்.</p>'; });
   }
   function slug(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
   function bad(e) { auth.token = ''; try { sessionStorage.removeItem('kj-token'); } catch (x) {} var m = document.getElementById('aerr'); if (m) m.textContent = 'முடியவில்லை. மீண்டும் உள்நுழையுங்கள்.'; }
@@ -816,9 +918,10 @@
     if (wn && addedIn(wn).length) main = main.replace(/(<p class="page-sub">[\s\S]*?<\/p>)/, '$1' + addedBlock(wn));
     document.documentElement.style.setProperty('--scale', state.scale);
     document.getElementById('app').innerHTML = header(active) + main +
-      '<footer>© ' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')' + (sbOn() ? '<div class="hits"><span class="hl">இதுவரை வருகை தந்தோர்</span><span class="odo" id="visn" role="img" aria-label="' + SHOWN + ' வருகையாளர்கள்">' + odo(SHOWN) + '</span><span class="live"><i></i>நேரலை</span></div>' : '') + '</footer>';
+      '<footer>© ' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')' + (sbOn() ? '<div class="hits"><span class="hl">இதுவரை வருகை தந்தோர்</span><span class="odo" id="visn" role="img" aria-label="' + SHOWN + ' வருகையாளர்கள்">' + odo(SHOWN) + '</span><span class="live"><i></i>நேரலை</span></div><a class="adm-link" href="#admin" data-go="admin" aria-label="நிர்வாகம்" title="நிர்வாகம்"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></a>' : '') + '</footer>';
     if (state.view === 'poems') fillGrid();
     loadSocial(); siteViews();
+    if (state.view === 'admin' && auth.token) loadAna();
   }
 
   function go(view) {
