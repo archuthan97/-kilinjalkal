@@ -126,6 +126,15 @@
   .tools button { font: 600 0.9375rem/1 var(--f-ui); min-width: 2.5rem; padding: 0.4rem 0.6rem; border: 1px solid var(--rule); background: transparent; border-radius: 4px; }
   .tools button:hover { border-color: var(--accent); color: var(--accent); }
   .poem { margin-block: 1.25rem 2.5rem; }
+  .lang { display: inline-flex; margin-top: 1rem; border: 1px solid var(--rule); border-radius: 999px; padding: 2px; }
+  .lang button { font: 600 0.875rem/1 var(--f-ui); padding: 0.5rem 0.9rem; border: 0; border-radius: 999px; background: transparent; color: var(--muted); }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .entr { margin-block: 1.25rem 2.5rem; }
+  .entr .stanza, .entr .stv { font-family: "Tiro Tamil", Georgia, serif; line-height: 1.8; }
+  .entr .st { font-family: "Tiro Tamil", Georgia, serif; line-height: 1.75; }
+  .ai-note { font: 600 0.75rem/1.5 var(--f-ui); letter-spacing: 0.04em; color: var(--accent); margin: 0 0 1rem; }
+  .en-t { font: 400 1.5rem/1.4 "Tiro Tamil", Georgia, serif; margin: 0 0 1.25rem; }
+  .tr-note { font: 400 0.875rem/1.7 var(--f-ui); color: var(--muted); border-top: 1px solid var(--rule); padding-top: 0.75rem; margin-top: 2rem; }
   .stanza { font: 400 calc(1.3rem * var(--scale))/2.05 var(--f-display); margin: 0 0 1.6em; white-space: pre-line; }
   .orn { text-align: center; letter-spacing: 0.7em; color: var(--muted); margin: 2.25rem 0; font: 400 1rem/1 var(--f-ui); }
   .pn { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 2rem; }
@@ -449,6 +458,50 @@
     var e = SYN[key]; if (!e) return '';
     return '<details class="en" lang="en"><summary><span class="eh">In English</span><span class="et">' + esc(e.t) + '</span></summary><p>' + esc(e.s) + '</p></details>';
   }
+  /* ---- full English translations: en/<key>.json, loaded only when asked for ---- */
+  var ENC = {};
+  function hasEn(key) { return /^p\d+$/.test(key); }
+  function langPref() { try { return localStorage.getItem('kj-lang') === 'en' ? 'en' : 'ta'; } catch (e) { return 'ta'; } }
+  function langBar(key) {
+    if (!hasEn(key)) return '';
+    return '<div class="lang" role="group" aria-label="மொழி · Language"><button type="button" data-lang="ta" aria-pressed="true">தமிழ்</button><button type="button" data-lang="en" aria-pressed="false" lang="en">English</button></div>';
+  }
+  function enSlot(key) { return hasEn(key) ? '<article id="en-body" class="entr" lang="en" data-key="' + key + '" hidden></article>' : ''; }
+  function enText(src, tr) {
+    var b = tr.b;
+    if (Array.isArray(b)) return b.map(function (x) {
+      if (x === '§') return '<p class="orn" aria-hidden="true">· · ·</p>';
+      if (x.indexOf('v:') === 0) return '<p class="stv">' + esc(x.slice(2)) + '</p>';
+      if (x.indexOf('h:') === 0) return '<h2 class="sh3">' + esc(x.slice(2)) + '</h2>';
+      if (x.indexOf('n:') === 0) return '<p class="snum">' + esc(x.slice(2)) + '</p>';
+      return '<p class="st">' + esc(x) + '</p>';
+    }).join('');
+    return b.split('\n\n').map(function (x) {
+      if (x === '§') return '<p class="orn" aria-hidden="true">· · ·</p>';
+      if (src && src.pr) return '<p class="' + (x.indexOf('\n') >= 0 ? 'stv' : 'st') + '">' + esc(x) + '</p>';
+      return '<p class="stanza">' + esc(x) + '</p>';
+    }).join('');
+  }
+  function srcOf(key) { var m = /^([pmsdk])(\d+)$/.exec(key), L = m && { p: POEMS, m: MORE, s: STORIES, d: DIARY, k: KIR }[m[1]]; return L ? L[parseInt(m[2], 10) - 1] : null; }
+  function setLang(lang, save) {
+    var ta = document.getElementById('ta-body'), en = document.getElementById('en-body'); if (!ta || !en) return;
+    if (save) { try { localStorage.setItem('kj-lang', lang); } catch (e) {} }
+    document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === lang)); });
+    var key = en.getAttribute('data-key');
+    if (lang === 'ta') { ta.hidden = false; en.hidden = true; return; }
+    function show(tr) {
+      var e2 = document.getElementById('en-body'); if (!e2 || e2.getAttribute('data-key') !== key) return;
+      e2.innerHTML = tr ? '<p class="ai-note">' + (tr.checked ? 'Translation checked by Venu' : 'AI translation · not yet checked by the author') + '</p>' + (tr.t ? '<h2 class="en-t">' + esc(tr.t) + '</h2>' : '') + enText(srcOf(key), tr) + (tr.note ? '<p class="tr-note">Translator’s note: ' + esc(tr.note) + '</p>' : '')
+        : '<p class="note">The English translation of this piece is not ready yet.</p>';
+      document.getElementById('ta-body').hidden = true; e2.hidden = false;
+    }
+    if (ENC[key]) return show(ENC[key]);
+    en.innerHTML = '<p class="note">Loading…</p>'; en.hidden = false; ta.hidden = true;
+    fetch('en/' + key + '.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { ENC[key] = j; show(j); }).catch(function () { show(null); });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-lang]') : null; if (b) setLang(b.getAttribute('data-lang'), true);
+  });
   function enTitle(key) { var e = SYN[key]; return e && e.t ? '<span class="le" lang="en">' + esc(e.t) + '</span>' : ''; }
 
   /* ---- Supabase (comments, ratings, views, admin) ---- */
@@ -843,7 +896,7 @@
     return '<a class="back" href="#' + bk[0] + '" data-go="' + bk[0] + '">← ' + bk[1] + '</a>' +
       '<div class="rhead"><span class="tile">' + (pre === 'm' ? tileFor(p, i + 61) : pre === 'k' ? tileFor(p, i + 101) : shell(i + 1)) + '</span><div><h1 class="work-title">' + esc(p.t) + '</h1>' +
       '<div class="work-meta">' + meta + '</div></div></div>' + enBox(pre + (i + 1)) +
-      tools() + (p.im ? '<figure class="ph"><img src="' + esc(p.im) + '" alt=""></figure>' : '') + (p.pr ? '<article>' : '<article class="poem">') + body + '</article>' +
+      tools() + (p.im ? '<figure class="ph"><img src="' + esc(p.im) + '" alt=""></figure>' : '') + langBar(pre + (i + 1)) + (p.pr ? '<article id="ta-body">' : '<article id="ta-body" class="poem">') + body + '</article>' + enSlot(pre + (i + 1)) +
       '<nav class="pn" aria-label="அடுத்த கவிதை">' + pn(prev, i - 1, -1) + pn(next, i + 1, 1) + '</nav>' + socialBox(pre + (i + 1));
   }
 
@@ -870,7 +923,7 @@
     return '<a class="back" href="#' + back + '" data-go="' + back + '">← ' + backLabel + '</a>' +
       (s.ic ? '<div class="rhead"><span class="tile">' + icon(s.ic, i + 7) + '</span><div><h1 class="work-title">' + esc(s.t) + '</h1><div class="work-meta">' + (i + 1) + ' / ' + L.length + ' · ' + Math.max(1, Math.round(s.w / 180)) + ' நிமிட வாசிப்பு</div></div></div>' : '<h1 class="page-title">' + esc(s.t) + '</h1><div class="work-meta">' + (i + 1) + ' / ' + L.length + ' · ' + Math.max(1, Math.round(s.w / 180)) + ' நிமிட வாசிப்பு</div>') +
       (pre === 'd' ? '<p class="note">தனியுரிமைக்காக இந்த நாட்குறிப்பிலுள்ள பெயர்கள் மாற்றப்பட்டுள்ளன.</p>' : '') + enBox(pre + (i + 1)) +
-      (s.enc && !s.b.length ? '<form class="lock" data-lock="' + (i) + '"><p>இந்தப் பகுதி பூட்டப்பட்டுள்ளது. கடவுச்சொல்லை உள்ளிடுங்கள்.</p><label class="lbl" for="pw">கடவுச்சொல்</label><input id="pw" type="password" autocomplete="off"><button type="submit">திற</button><p class="err" id="lockerr" aria-live="polite"></p></form>' : '') + (s.b.length ? tools() : '') + (s.im ? '<figure class="ph"><img src="' + esc(s.im) + '" alt=""></figure>' : '') + '<article>' + body + '</article>' + (s.b.length ? '<p class="sign"><span>' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')</span></p>' : '') +
+      (s.enc && !s.b.length ? '<form class="lock" data-lock="' + (i) + '"><p>இந்தப் பகுதி பூட்டப்பட்டுள்ளது. கடவுச்சொல்லை உள்ளிடுங்கள்.</p><label class="lbl" for="pw">கடவுச்சொல்</label><input id="pw" type="password" autocomplete="off"><button type="submit">திற</button><p class="err" id="lockerr" aria-live="polite"></p></form>' : '') + (s.b.length ? tools() : '') + (s.im ? '<figure class="ph"><img src="' + esc(s.im) + '" alt=""></figure>' : '') + (s.b.length ? langBar(pre + (i + 1)) : '') + '<article id="ta-body">' + body + '</article>' + enSlot(pre + (i + 1)) + (s.b.length ? '<p class="sign"><span>' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')</span></p>' : '') +
       '<nav class="pn" aria-label="அடுத்தது">' + pn(prev, i - 1, -1) + pn(next, i + 1, 1) + '</nav>' + socialBox(pre + (i + 1));
   }
   function groupedList(L, pre) {
@@ -948,6 +1001,7 @@
       '<footer>© ' + esc(BOOK.author) + ' (' + esc(BOOK.pen) + ')' + (sbOn() ? '<div class="hits"><span class="hl">இதுவரை வருகை தந்தோர்</span><span class="odo" id="visn" role="img" aria-label="' + SHOWN + ' வருகையாளர்கள்">' + odo(SHOWN) + '</span><span class="live"><i></i>நேரலை</span></div><a class="adm-link" href="#admin" data-go="admin" aria-label="நிர்வாகம்" title="நிர்வாகம்"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></a>' : '') + '</footer>';
     if (state.view === 'poems') fillGrid();
     loadSocial(); siteViews();
+    if (langPref() === 'en') setLang('en');
     if (state.view === 'admin' && auth.token) loadAna();
   }
 
