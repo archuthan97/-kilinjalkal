@@ -459,8 +459,8 @@
     return '<details class="en" lang="en"><summary><span class="eh">In English</span><span class="et">' + esc(e.t) + '</span></summary><p>' + esc(e.s) + '</p></details>';
   }
   /* ---- full English translations: en/<key>.json, loaded only when asked for ---- */
-  var ENC = {};
-  function hasEn(key) { return /^[pmsk]\d+$/.test(key); }
+  var ENC = {}, DPW = '';
+  function hasEn(key) { return /^[pmsdk]\d+$/.test(key); }
   function langPref() { try { return localStorage.getItem('kj-lang') === 'en' ? 'en' : 'ta'; } catch (e) { return 'ta'; } }
   function langBar(key) {
     if (!hasEn(key)) return '';
@@ -484,7 +484,7 @@
   }
   function srcOf(key) { var m = /^([pmsdk])(\d+)$/.exec(key), L = m && { p: POEMS, m: MORE, s: STORIES, d: DIARY, k: KIR }[m[1]]; return L ? L[parseInt(m[2], 10) - 1] : null; }
   function setLang(lang, save) {
-    var ta = document.getElementById('ta-body'), en = document.getElementById('en-body'); if (!ta || !en) return;
+    var ta = document.getElementById('ta-body'), en = document.getElementById('en-body'); if (!ta || !en || !document.querySelector('.lang')) return;
     if (save) { try { localStorage.setItem('kj-lang', lang); } catch (e) {} }
     document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === lang)); });
     var key = en.getAttribute('data-key');
@@ -497,7 +497,14 @@
     }
     if (ENC[key]) return show(ENC[key]);
     en.innerHTML = '<p class="note">Loading…</p>'; en.hidden = false; ta.hidden = true;
-    fetch('en/' + key + '.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { ENC[key] = j; show(j); }).catch(function () { show(null); });
+    fetch('en/' + key + '.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { return j.enc ? unlockEn(j.enc) : j; }).then(function (j) { ENC[key] = j; show(j); }).catch(function () { show(null); });
+  }
+  /* the locked diary chapter's translation is encrypted with the same passcode as the Tamil */
+  function unlockEn(x) {
+    if (!DPW || !(window.crypto && crypto.subtle)) return Promise.reject(0);
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(DPW), 'PBKDF2', false, ['deriveKey']).then(function (k) {
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(x.s), iterations: 150000, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    }).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(x.i) }, k, b64(x.c)); }).then(function (buf) { return JSON.parse(new TextDecoder().decode(buf)); });
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-lang]') : null; if (b) setLang(b.getAttribute('data-lang'), true);
@@ -1036,7 +1043,7 @@
       return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(s.enc.s), iterations: 150000, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     }).then(function (k) {
       return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(s.enc.i) }, k, b64(s.enc.c));
-    }).then(function (buf) { s.b = JSON.parse(new TextDecoder().decode(buf)); render(); }, function () { err.textContent = 'கடவுச்சொல் சரியில்லை.'; });
+    }).then(function (buf) { s.b = JSON.parse(new TextDecoder().decode(buf)); DPW = pw; render(); }, function () { err.textContent = 'கடவுச்சொல் சரியில்லை.'; });
   });
   document.addEventListener('input', function (e) {
     if (e.target && e.target.id === 'q') { state.q = e.target.value; fillGrid(); }
