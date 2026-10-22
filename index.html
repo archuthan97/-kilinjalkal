@@ -120,7 +120,7 @@
   .rhead { display: flex; gap: 1.25rem; align-items: center; margin-top: 0.75rem; }
   .rhead .tile { flex: 0 0 5.5rem; width: 5.5rem; padding: 0.7rem; }
   .rhead > div { min-width: 0; }
-  .work-title { font: 400 clamp(1.9rem, 6.5vw, 2.75rem)/1.4 var(--f-display); margin: 0; text-wrap: balance; }
+  .work-title { font: 400 clamp(1.9rem, 6.5vw, 2.75rem)/1.4 var(--f-display); margin: 0; text-wrap: balance; overflow-wrap: break-word; }
   .work-meta { font: 400 0.875rem/1.7 var(--f-ui); color: var(--muted); margin-top: 0.1rem; }
   .tools { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; font: 400 0.8125rem/1 var(--f-ui); color: var(--muted); }
   .tools button { font: 600 0.9375rem/1 var(--f-ui); min-width: 2.5rem; padding: 0.4rem 0.6rem; border: 1px solid var(--rule); background: transparent; border-radius: 4px; }
@@ -141,7 +141,7 @@
   .pn a { text-decoration: none; max-width: 48%; min-width: 0; }
   .pn a:last-child:not(:first-child) { text-align: right; margin-left: auto; }
   .pn small { display: block; font: 400 0.8125rem/1.6 var(--f-ui); color: var(--muted); }
-  .pn span { font: 400 1.125rem/1.6 var(--f-display); }
+  .pn span { font: 400 1.125rem/1.6 var(--f-display); display: block; overflow-wrap: anywhere; }
   .pn a:hover span { color: var(--accent); }
 
   /* Foreword */
@@ -460,7 +460,7 @@
   }
   /* ---- full English translations: en/<key>.json, loaded only when asked for ---- */
   var ENC = {};
-  function hasEn(key) { return /^p\d+$/.test(key); }
+  function hasEn(key) { return /^[pmsk]\d+$/.test(key); }
   function langPref() { try { return localStorage.getItem('kj-lang') === 'en' ? 'en' : 'ta'; } catch (e) { return 'ta'; } }
   function langBar(key) {
     if (!hasEn(key)) return '';
