@@ -209,6 +209,16 @@
   .cf button, .adm button.go { justify-self: start; font: 600 0.9375rem var(--f-ui); padding: 0.55rem 1rem; border: 2px solid var(--ink); background: var(--ink); color: var(--paper); border-radius: 0; }
   .cm-i { border-top: 1px solid var(--rule); padding: 0.6rem 0; } .cm-i b { font-weight: 600; } .cm-i time { color: var(--muted); font-size: 0.8125rem; margin-left: 0.5rem; } .cm-i p { margin: 0.2rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
   .cm-i .del { border: 0; background: transparent; color: var(--accent); font-size: 0.8125rem; text-decoration: underline; padding: 0; margin-left: 0.75rem; }
+  .cm-a { margin-left: 0.5rem; white-space: nowrap; }
+  .cm-like { border: 1px solid var(--rule); background: transparent; color: var(--muted); border-radius: 999px; font-size: 0.8125rem; line-height: 1; padding: 0.3rem 0.5rem; }
+  .cm-like.on { color: var(--accent); border-color: var(--accent); }
+  .cm-i .cm-liked { color: var(--accent); font: 600 0.8125rem/1.6 var(--f-ui); margin-top: 0.3rem; }
+  .cm-r { margin: 0.5rem 0 0 1rem; padding: 0.4rem 0 0.4rem 0.8rem; border-left: 2px solid var(--accent); }
+  .cm-r .au { font: 600 0.6875rem/1 var(--f-ui); color: var(--paper); background: var(--accent); border-radius: 3px; padding: 0.15rem 0.35rem; margin-left: 0.5rem; vertical-align: 0.1em; }
+  .cm-rf { display: grid; gap: 0.4rem; margin: 0.5rem 0 0 1rem; }
+  .cm-rf[hidden] { display: none; }
+  .cm-rf textarea { font: inherit; padding: 0.5rem 0.6rem; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); min-height: 4.5rem; width: 100%; box-sizing: border-box; }
+  .cm-rf button { justify-self: start; font: 600 0.875rem var(--f-ui); padding: 0.45rem 0.9rem; border: 2px solid var(--ink); background: var(--ink); color: var(--paper); }
   .adm { display: grid; gap: 0.6rem; margin: 1rem 0; } .adm label { font: 600 0.8125rem var(--f-ui); }
   .tot { color: var(--muted); font-size: 0.8125rem; }
   .note { font: 400 0.875rem/1.6 var(--f-ui); color: var(--muted); border-left: 2px solid var(--accent); padding-left: 0.75rem; margin: 0.75rem 0 0; }
@@ -571,22 +581,44 @@
         drawStars(mine, rows.length ? sum / rows.length : 0, rows.length);
       }).catch(function () { drawStars(0, 0, 0); });
     }
+    function commentHtml(c) {
+      var me2 = esc(BOOK.pen), adm = auth.token;
+      var tools = adm ? '<span class="cm-a">' + (c.liked !== undefined ? '<button type="button" class="cm-like' + (c.liked ? ' on' : '') + '" data-like="' + c.id + '" data-on="' + (c.liked ? 1 : 0) + '" aria-pressed="' + !!c.liked + '" title="பிடித்தது">❤</button>' : '') +
+        (c.reply !== undefined ? '<button class="del" type="button" data-reply="' + c.id + '">' + (c.reply ? 'பதிலைத் திருத்து' : 'பதில்') + '</button>' : '') +
+        '<button class="del" type="button" data-del="' + c.id + '">நீக்கு</button></span>' : '';
+      return '<div class="cm-i"><b>' + esc(c.name) + '</b><time>' + fmtDate(c.created_at) + '</time>' + tools +
+        '<p>' + esc(c.body) + '</p>' +
+        (c.liked && !adm ? '<p class="cm-liked">❤ ' + me2 + 'வுக்குப் பிடித்தது</p>' : '') +
+        (c.reply ? '<div class="cm-r"><b>' + me2 + '</b><span class="au">நூலாசிரியர்</span><p>' + esc(c.reply) + '</p></div>' : '') +
+        (adm && c.reply !== undefined ? '<form class="cm-rf" data-rid="' + c.id + '" hidden><label class="lbl" for="rp' + c.id + '">உங்கள் பதில்</label><textarea id="rp' + c.id + '" maxlength="1000">' + esc(c.reply || '') + '</textarea><button type="submit">சேமி</button><span class="err" aria-live="polite"></span></form>' : '') +
+        '</div>';
+    }
     function loadComments() {
-      sb('/rest/v1/comments?piece=eq.' + key + '&order=created_at.desc&select=id,name,body,created_at').then(function (rows) {
+      var base = '/rest/v1/comments?piece=eq.' + key + '&order=created_at.desc&select=id,name,body,created_at';
+      sb(base + ',liked,reply').catch(function () { return sb(base); }).then(function (rows) {
         var l = document.getElementById('clist'); if (!l) return;
-        l.innerHTML = rows.length ? rows.map(function (c) {
-          return '<div class="cm-i"><b>' + esc(c.name) + '</b><time>' + fmtDate(c.created_at) + '</time>' + (auth.token ? '<button class="del" type="button" data-del="' + c.id + '">நீக்கு</button>' : '') + '<p>' + esc(c.body) + '</p></div>';
-        }).join('') : '<p class="note">இன்னும் கருத்துகள் இல்லை.</p>';
+        l.innerHTML = rows.length ? rows.map(commentHtml).join('') : '<p class="note">இன்னும் கருத்துகள் இல்லை.</p>';
       }).catch(function () {});
     }
     loadRatings(); loadComments();
     box.addEventListener('click', function (e) {
-      var b = e.target.closest ? e.target.closest('[data-star],[data-del]') : null; if (!b) return;
-      if (b.hasAttribute('data-star')) {
+      var b = e.target.closest ? e.target.closest('[data-star],[data-del],[data-like],[data-reply]') : null; if (!b) return;
+      if (b.hasAttribute('data-like')) {
+        sb('/rest/v1/comments?id=eq.' + b.getAttribute('data-like'), { method: 'PATCH', prefer: 'return=minimal', body: { liked: b.getAttribute('data-on') !== '1' } }).then(loadComments).catch(function () {});
+      } else if (b.hasAttribute('data-reply')) {
+        var rf = box.querySelector('[data-rid="' + b.getAttribute('data-reply') + '"]'); if (rf) { rf.hidden = !rf.hidden; if (!rf.hidden) rf.querySelector('textarea').focus(); }
+      } else if (b.hasAttribute('data-star')) {
         sb('/rest/v1/ratings?on_conflict=piece,visitor', { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal', body: { piece: key, visitor: me, stars: parseInt(b.getAttribute('data-star'), 10) } }).then(loadRatings).catch(function () {});
       } else {
         sb('/rest/v1/comments?id=eq.' + b.getAttribute('data-del'), { method: 'DELETE' }).then(loadComments).catch(function () {});
       }
+    });
+    box.addEventListener('submit', function (e) {
+      var rf = e.target.closest ? e.target.closest('[data-rid]') : null; if (!rf) return;
+      e.preventDefault();
+      var t = rf.querySelector('textarea').value.trim();
+      sb('/rest/v1/comments?id=eq.' + rf.getAttribute('data-rid'), { method: 'PATCH', prefer: 'return=minimal', body: { reply: t || null, replied_at: t ? new Date().toISOString() : null } })
+        .then(loadComments).catch(function () { rf.querySelector('.err').textContent = 'சேமிக்க இயலவில்லை. மீண்டும் உள்நுழையுங்கள்.'; });
     });
     var f = document.getElementById('cform'), fo = document.getElementById('cfopen');
     fo.addEventListener('click', function () { fo.hidden = true; f.hidden = false; document.getElementById('cn').focus(); });
