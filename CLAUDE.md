@@ -1,7 +1,7 @@
-# கிளிஞ்சல்கள் site (kilinjalkal.com)
+# கிளிஞ்சல்கள் site (venu.kilinjalkal.com)
 
 Static site: `index.html` (HTML + CSS + vanilla JS, no build step, ~730 KB because poems/stories are embedded) plus photos in `img/` (cover, banner, beach; `img/banner.jpg` is also the link-preview image).
-Hosted on GitHub Pages from the `main` branch (custom domain kilinjalkal.com via the `CNAME` file; DNS at Namecheap). kilinjalkal.netlify.app is the old address. Every push publishes, with no deploy limit, but still batch changes into one push per session. Backend: Supabase (comments, ratings, view counts, `#admin` login, added pieces, custom tabs).
+Hosted on GitHub Pages from the `main` branch (custom domain venu.kilinjalkal.com via the `CNAME` file; DNS at Namecheap; the bare kilinjalkal.com is kept for the owner's other apps on subdomains). kilinjalkal.netlify.app is the old address. Every push publishes, with no deploy limit, but still batch changes into one push per session. Backend: Supabase (comments, ratings, view counts, `#admin` login, added pieces, custom tabs).
 
 ## Rules
 - Edit `index.html` directly. Never rewrite the whole file; use targeted edits (grep for the function or CSS class first). The large embedded data lines (POEMS, STORIES, DIARY, KIR, SYN) must not be touched or reformatted. Photos live in `img/`, not as base64 in the page.
